@@ -1,0 +1,154 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Route Planner</title>
+  <link rel="manifest" href="manifest.webmanifest">
+  <meta name="theme-color" content="#111111">
+  <style>
+    body{font-family:-apple-system,system-ui,Segoe UI,Roboto,Arial;margin:0;background:#f6f6f7;color:#111}
+    header{padding:14px 16px;background:#111;color:#fff;position:sticky;top:0;z-index:10}
+    header h1{font-size:16px;margin:0}
+    .wrap{padding:12px 12px 88px}
+    .card{background:#fff;border-radius:14px;padding:12px;box-shadow:0 1px 6px rgba(0,0,0,.06);margin-bottom:12px}
+    .row{display:flex;gap:10px;flex-wrap:wrap}
+    .row > *{flex:1;min-width:140px}
+    label{display:block;font-size:12px;color:#555;margin-bottom:6px}
+    input,select,button,textarea{width:100%;padding:10px;border-radius:12px;border:1px solid #ddd;font-size:14px;background:#fff}
+    textarea{min-height:70px;resize:vertical}
+    button{background:#111;color:#fff;border:none;font-weight:600}
+    button.secondary{background:#fff;color:#111;border:1px solid #ddd}
+    button.danger{background:#b00020}
+    button:disabled{opacity:.5}
+    .list{display:flex;flex-direction:column;gap:8px}
+    .item{padding:10px;border:1px solid #eee;border-radius:12px;background:#fff}
+    .item h3{margin:0 0 4px;font-size:14px}
+    .muted{color:#666;font-size:12px}
+    .pill{display:inline-block;font-size:12px;padding:4px 8px;border-radius:999px;background:#f0f0f2;margin-left:8px}
+    .split{display:flex;gap:10px}
+    .split > *{flex:1}
+    .legs{font-size:13px;margin-top:8px}
+    .legs .leg{padding:8px 0;border-bottom:1px solid #eee}
+    .legs .leg:last-child{border-bottom:none}
+    .stickybar{position:fixed;left:0;right:0;bottom:0;background:#fff;border-top:1px solid #eee;padding:10px;display:flex;gap:10px}
+    .stickybar button{flex:1}
+  </style>
+</head>
+<body>
+  <header><h1>Route Planner (Offline)</h1></header>
+
+  <div class="wrap">
+
+    <div class="card">
+      <h2 style="margin:0 0 10px;font-size:15px;">Add Site</h2>
+      <div class="row">
+        <div>
+          <label>Name</label>
+          <input id="siteName" placeholder="Pub / Site name">
+        </div>
+        <div>
+          <label>Postcode / Address</label>
+          <input id="siteAddr" placeholder="AL1 1AA or full address">
+        </div>
+      </div>
+      <div class="row">
+        <div>
+          <label>Latitude (optional)</label>
+          <input id="siteLat" placeholder="51.75" inputmode="decimal">
+        </div>
+        <div>
+          <label>Longitude (optional)</label>
+          <input id="siteLon" placeholder="-0.34" inputmode="decimal">
+        </div>
+      </div>
+      <div class="row">
+        <div>
+          <label>Notes</label>
+          <textarea id="siteNotes" placeholder="Access notes, contact, etc."></textarea>
+        </div>
+      </div>
+      <div class="split">
+        <button id="addSiteBtn">Save Site</button>
+        <button class="danger" id="clearAllBtn" title="Deletes everything">Clear All Data</button>
+      </div>
+      <p class="muted" style="margin:10px 0 0;">
+        Tip: If you don’t know lat/lon, the app can try to look it up online later (then it’s saved for offline).
+      </p>
+    </div>
+
+    <div class="card">
+      <h2 style="margin:0 0 10px;font-size:15px;">Build Route</h2>
+
+      <div class="row">
+        <div>
+          <label>Route name</label>
+          <input id="routeTitle" placeholder="e.g., North run - Tue">
+        </div>
+      </div>
+
+      <div class="row">
+        <div>
+          <label>Start point</label>
+          <select id="startMode">
+            <option value="current">Current location (best for today)</option>
+            <option value="manual">Manual start (postcode/address)</option>
+          </select>
+        </div>
+        <div id="manualWrap" style="display:none;">
+          <label>Manual start</label>
+          <input id="manualStart" placeholder="Start postcode/address">
+        </div>
+      </div>
+
+      <div class="row">
+        <div>
+          <label>Select stops (tap to add/remove)</label>
+          <div class="list" id="sitesList"></div>
+        </div>
+      </div>
+
+      <div style="margin-top:12px;">
+        <h3 style="margin:0 0 6px; font-size:14px;">Stops (ordered)</h3>
+        <div class="list" id="routeStops"></div>
+        <p class="muted" style="margin:8px 0 0;">Reorder with ↑ / ↓.</p>
+      </div>
+
+      <div class="split" style="margin-top:12px;">
+        <button id="saveRouteBtn">Save Route</button>
+        <button class="secondary" id="newRouteBtn">New</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2 style="margin:0 0 10px;font-size:15px;">Mileage</h2>
+      <div class="split">
+        <button id="calcBtn">Calculate & Cache</button>
+        <button class="secondary" id="loadBtn">Load Cached</button>
+      </div>
+      <p class="muted" id="status" style="margin:10px 0 0;">Ready.</p>
+
+      <div style="margin-top:10px;">
+        <div><strong>Total:</strong> <span id="totalMiles">0.0</span> miles</div>
+        <div class="legs" id="legs"></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2 style="margin:0 0 10px;font-size:15px;">Saved Routes</h2>
+      <div class="list" id="savedRoutes"></div>
+    </div>
+
+  </div>
+
+  <div class="stickybar">
+    <button id="navGoogleBtn">Navigate (Google)</button>
+    <button id="navWazeBtn">Navigate (Waze)</button>
+  </div>
+
+  <script src="app.js"></script>
+  <script>
+    if ("serviceWorker" in navigator) navigator.serviceWorker.register("./sw.js");
+  </script>
+</body>
+</html>
